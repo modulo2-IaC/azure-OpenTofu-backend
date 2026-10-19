@@ -1,0 +1,33 @@
+# =============================================================================
+# terraform.tfvars.example - Plantilla de variables para el Backend en Azure VM
+# Copia este archivo como 'terraform.tfvars' y completa tus valores sensibles.
+# NUNCA subas 'terraform.tfvars' con credenciales reales a GitHub.
+# =============================================================================
+
+project_name = "asistencia"
+environment  = "dev"
+location     = "swedencentral"
+
+# Standard_B2as_v2 = 2 vCPU / 2 GB RAM (disponible en Azure Free Trial)
+vm_size = "Standard_B2as_v2"
+
+# Credenciales de acceso SSH a la VM
+admin_username = "azureuser"
+admin_password = "TuPasswordSeguro123!"  # Minimo 12 caracteres, mayusculas, numeros y simbolos
+
+# Version LTS de Node.js
+node_version = "20"
+
+# Repositorio Git de la aplicacion backend NestJS (opcional)
+# Si se provee, la VM clonara el codigo automaticamente al iniciar
+repo_url = "https://github.com/Joandrr/asistencia-backend.git"
+
+# Cadena de conexion PostgreSQL en Neon
+database_url = "postgresql://neondb_owner:PASSWORD@ep-xxx-pooler.c-7.us-east-2.aws.neon.tech/neondb?sslmode=require"
+
+# Clave secreta JWT (dejar null para que OpenTofu genere una automaticamente de 64 caracteres)
+jwt_secret = null
+
+cors_origin    = "*"
+app_timezone   = "America/La_Paz"
+run_migrations = true

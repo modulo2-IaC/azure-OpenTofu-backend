@@ -1,0 +1,173 @@
+#cloud-config
+# =============================================================================
+# CLOUD-INIT para asistencia-backend (NestJS en Node.js)
+# Este script se ejecuta AUTOMATICAMENTE la primera vez que la VM arranca.
+# Azure lo inyecta en la VM antes de que el usuario pueda conectarse.
+# =============================================================================
+
+package_update: true
+package_upgrade: false
+
+# Paquetes del sistema que se instalan primero
+packages:
+  - git
+  - curl
+  - wget
+  - unzip
+  - build-essential
+
+write_files:
+  # ---------------------------------------------------------------------------
+  # Configuracion PM2 para arranque y monitoreo automatico
+  # (Se escribe con propietario root y permisos 0644 de forma segura)
+  # ---------------------------------------------------------------------------
+  - path: /opt/asistencia-backend/ecosystem.config.js
+    permissions: '0644'
+    content: |
+      module.exports = {
+        apps: [{
+          name: 'asistencia-backend',
+          script: 'dist/main.js',
+          cwd: '/opt/asistencia-backend',
+          instances: 1,
+          autorestart: true,
+          watch: false,
+          env_file: '/opt/asistencia-backend/.env',
+          error_file: '/var/log/pm2/asistencia-error.log',
+          out_file:   '/var/log/pm2/asistencia-out.log',
+          log_date_format: 'YYYY-MM-DD HH:mm:ss'
+        }]
+      };
+
+runcmd:
+  # ---------------------------------------------------------------------------
+  # PASO 1: Habilitar 1GB Swap para asegurar compilacion fluida de NestJS/TS
+  # ---------------------------------------------------------------------------
+  - |
+    if [ ! -f /swapfile ]; then
+      fallocate -l 1G /swapfile || dd if=/dev/zero of=/swapfile bs=1M count=1024
+      chmod 600 /swapfile
+      mkswap /swapfile
+      swapon /swapfile
+      echo '/swapfile none swap sw 0 0' >> /etc/fstab
+    fi
+
+  # ---------------------------------------------------------------------------
+  # PASO 2: Instalar Node.js ${node_version} LTS via NodeSource
+  # ---------------------------------------------------------------------------
+  - curl -fsSL https://deb.nodesource.com/setup_${node_version}.x | bash -
+  - apt-get install -y nodejs
+  - node --version
+  - npm --version
+
+  # ---------------------------------------------------------------------------
+  # PASO 3: Instalar PM2 globalmente
+  # ---------------------------------------------------------------------------
+  - npm install -g pm2
+
+  # ---------------------------------------------------------------------------
+  # PASO 4: Preparar directorio de aplicacion y permisos de usuario
+  # ---------------------------------------------------------------------------
+  - mkdir -p /opt/asistencia-backend
+  - mkdir -p /var/log/pm2
+  - chown -R ${admin_username}:${admin_username} /opt/asistencia-backend
+  - chown -R ${admin_username}:${admin_username} /var/log/pm2
+  - chown ${admin_username}:${admin_username} /home/${admin_username}
+
+  # ---------------------------------------------------------------------------
+  # PASO 5: Crear script ~/deploy.sh para el usuario
+  # ---------------------------------------------------------------------------
+  - |
+    cat << 'DEPLOY_EOF' > /home/${admin_username}/deploy.sh
+    #!/bin/bash
+    set -e
+    echo "======================================================"
+    echo "  Iniciando compilacion y despliegue: asistencia-backend"
+    echo "======================================================"
+
+    cd /opt/asistencia-backend
+
+    if [ -d .git ]; then
+      echo "[1/4] Actualizando codigo desde repositorio Git..."
+      git pull origin main || git pull
+    fi
+
+    if [ ! -f package.json ]; then
+      echo "Error: package.json no encontrado en /opt/asistencia-backend"
+      exit 1
+    fi
+
+    echo "[2/4] Instalando dependencias de Node.js..."
+    npm install --production=false
+
+    echo "[3/4] Compilando NestJS (npm run build)..."
+    npm run build
+
+    echo "[4/4] Reiniciando servicio con PM2..."
+    pm2 restart /opt/asistencia-backend/ecosystem.config.js || pm2 start /opt/asistencia-backend/ecosystem.config.js
+    pm2 save
+
+    echo "======================================================"
+    echo "  Despliegue del backend completado con exito!"
+    echo "======================================================"
+    DEPLOY_EOF
+    chmod 755 /home/${admin_username}/deploy.sh
+    chown ${admin_username}:${admin_username} /home/${admin_username}/deploy.sh
+
+  # ---------------------------------------------------------------------------
+  # PASO 6: Descargar el codigo del repositorio (si se provee URL)
+  # ---------------------------------------------------------------------------
+  - |
+    if [ -n "${repo_url}" ]; then
+      if [ ! -d /opt/asistencia-backend/.git ]; then
+        git clone "${repo_url}" /tmp/backend-repo
+        cp -a /tmp/backend-repo/. /opt/asistencia-backend/
+        rm -rf /tmp/backend-repo
+      fi
+      chown -R ${admin_username}:${admin_username} /opt/asistencia-backend
+    else
+      echo "No se especifico repo_url. El codigo debe subirse manualmente a /opt/asistencia-backend"
+    fi
+
+  # ---------------------------------------------------------------------------
+  # PASO 7: Crear el archivo .env con las variables de entorno
+  # ---------------------------------------------------------------------------
+  - |
+    cat > /opt/asistencia-backend/.env << 'ENVEOF'
+    NODE_ENV=production
+    PORT=3000
+    DATABASE_URL=${database_url}
+    JWT_SECRET=${jwt_secret}
+    CORS_ORIGIN=${cors_origin}
+    APP_TIMEZONE=${app_timezone}
+    RUN_MIGRATIONS=${run_migrations}
+    ENVEOF
+  - chown -R ${admin_username}:${admin_username} /opt/asistencia-backend
+
+  # ---------------------------------------------------------------------------
+  # PASO 8: Instalar dependencias y compilar el proyecto (si hay codigo)
+  # ---------------------------------------------------------------------------
+  - |
+    if [ -f /opt/asistencia-backend/package.json ]; then
+      cd /opt/asistencia-backend
+      sudo -u ${admin_username} npm install --production=false
+      sudo -u ${admin_username} npm run build
+    fi
+
+  # ---------------------------------------------------------------------------
+  # PASO 9: Iniciar el backend con PM2 (ejecutado con el usuario de la aplicacion)
+  # ---------------------------------------------------------------------------
+  - |
+    if [ -f /opt/asistencia-backend/dist/main.js ]; then
+      cd /opt/asistencia-backend
+      sudo -u ${admin_username} pm2 start /opt/asistencia-backend/ecosystem.config.js
+      sudo -u ${admin_username} pm2 save
+      env PATH=$PATH:/usr/bin pm2 startup systemd -u ${admin_username} --hp /home/${admin_username}
+    else
+      echo "dist/main.js no encontrado aun. El servicio se iniciara con ~/deploy.sh"
+    fi
+
+  # ---------------------------------------------------------------------------
+  # PASO 10: Registrar fin de instalacion
+  # ---------------------------------------------------------------------------
+  - 'echo "Cloud-init backend completado: $(date)" >> /var/log/asistencia-setup.log'
