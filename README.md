@@ -110,10 +110,14 @@ Si configuraste `repo_url`, cada vez que hagas cambios en el código de NestJS:
 ssh azureuser@<IP-PUBLICA> '~/deploy.sh'
 ```
 
-### Opción B: Vía SCP (Subida Manual)
+### Opción B: Subida Directa Ultra-Rápida (Comprimir sin node_modules)
+> ⚠️ **IMPORTANTE**: Nunca uses `scp -r` directo sobre la carpeta del proyecto porque subirá 50,000+ archivos de `node_modules` (tarda 45 min). Con este comando, se empaqueta solo el código fuente (pesa ~180 KB), sube en **1 segundo** y compila en la VM:
+
 ```bash
-scp -r ../../../../../asistencia-backend/. azureuser@<IP-PUBLICA>:/opt/asistencia-backend/
-ssh azureuser@<IP-PUBLICA> '~/deploy.sh'
+tar --exclude='node_modules' --exclude='.git' --exclude='dist' -czf backend.tar.gz -C ../../../../../asistencia-backend . && \
+scp backend.tar.gz azureuser@<IP-PUBLICA>:/tmp/ && \
+ssh azureuser@<IP-PUBLICA> 'tar -xzf /tmp/backend.tar.gz -C /opt/asistencia-backend && rm /tmp/backend.tar.gz && ~/deploy.sh' && \
+rm backend.tar.gz
 ```
 
 ---
