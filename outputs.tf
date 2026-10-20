@@ -39,8 +39,8 @@ output "ssh_connection_command" {
 }
 
 output "upload_command" {
-  description = "Comando sugerido para subir el codigo del backend a la VM (excluye node_modules para transferir en 2 segundos)"
-  value       = "tar --exclude='node_modules' --exclude='.git' --exclude='dist' -czf backend.tar.gz -C ../../../../../asistencia-backend . && scp backend.tar.gz ${var.admin_username}@${azurerm_public_ip.pip.ip_address}:/tmp/ && ssh ${var.admin_username}@${azurerm_public_ip.pip.ip_address} 'tar -xzf /tmp/backend.tar.gz -C /opt/asistencia-backend && rm /tmp/backend.tar.gz' && rm backend.tar.gz"
+  description = "Comando sugerido para subir el codigo del backend a la VM (excluye node_modules y .env para transferir en 2 segundos sin sobreescribir la config del servidor)"
+  value       = "tar --exclude='node_modules' --exclude='.git' --exclude='dist' --exclude='.env*' -czf backend.tar.gz -C ../../../../../asistencia-backend . && scp backend.tar.gz ${var.admin_username}@${azurerm_public_ip.pip.ip_address}:/tmp/ && ssh ${var.admin_username}@${azurerm_public_ip.pip.ip_address} 'tar -xzf /tmp/backend.tar.gz -C /opt/asistencia-backend && rm /tmp/backend.tar.gz && ~/deploy.sh' && rm backend.tar.gz"
 }
 
 output "deploy_command" {
