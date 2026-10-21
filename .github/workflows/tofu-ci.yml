@@ -1,4 +1,4 @@
-name: OpenTofu CI - Backend
+name: OpenTofu CI/CD - DevSecOps Pipeline
 
 on:
   push:
@@ -12,14 +12,51 @@ permissions:
   contents: read
 
 jobs:
-  validate-and-plan:
-    name: Lint, Validate & Plan
+  security-and-quality:
+    name: DevSecOps Quality & Security Gates
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
+      # -----------------------------------------------------------------------
+      # HERRAMIENTA 5 (Punto 6 IaC.md): Escaneo de Secretos con Gitleaks
+      # -----------------------------------------------------------------------
+      - name: Gitleaks Secret Scanner
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # -----------------------------------------------------------------------
+      # HERRAMIENTA 3 (Punto 5 IaC.md): Analisis Estatico con TFLint
+      # -----------------------------------------------------------------------
+      - name: Setup TFLint
+        uses: terraform-linters/setup-tflint@v4
+        with:
+          tflint_version: latest
+
+      - name: Init and Run TFLint
+        run: |
+          tflint --init
+          tflint --config=.tflint.hcl
+
+      # -----------------------------------------------------------------------
+      # HERRAMIENTA 4 (Punto 5 IaC.md): Analisis Estatico con Checkov
+      # -----------------------------------------------------------------------
+      - name: Checkov IaC Security Scanner
+        uses: bridgecrewio/checkov-action@master
+        with:
+          directory: .
+          framework: terraform
+          soft_fail: true
+          output_format: cli
+
+      # -----------------------------------------------------------------------
+      # HERRAMIENTA 2 (Punto 3 IaC.md): Setup y Validacion de Dependencias
+      # -----------------------------------------------------------------------
       - name: Setup OpenTofu
         uses: opentofu/setup-opentofu@v1
         with:
@@ -28,7 +65,7 @@ jobs:
       - name: Check OpenTofu Formatting
         run: tofu fmt -check
 
-      - name: OpenTofu Init
+      - name: OpenTofu Init (Valida checksums en .terraform.lock.hcl y Backend Remoto)
         env:
           ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
           ARM_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
@@ -39,6 +76,9 @@ jobs:
       - name: OpenTofu Validate
         run: tofu validate
 
+      # -----------------------------------------------------------------------
+      # HERRAMIENTA 6 (Punto 11 IaC.md): Plan con Recursos de Azure Monitor
+      # -----------------------------------------------------------------------
       - name: OpenTofu Plan
         if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch'
         env:

@@ -1,0 +1,17 @@
+# Configuracion de Gitleaks para Escaneo de Secretos (Punto 6 de IaC.md)
+title = "Reglas de deteccion de secretos para OpenTofu en Azure"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Permitir referencias y archivos de ejemplo publicos"
+paths = [
+  '''\.terraform\.lock\.hcl$''',
+  '''terraform\.tfvars\.example$''',
+  '''cloud-init\.yaml$'''
+]
+regexes = [
+  '''azureuser''',
+  '''sttofuasistenciadev'''
+]

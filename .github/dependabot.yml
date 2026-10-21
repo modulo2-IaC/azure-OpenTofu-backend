@@ -1,0 +1,17 @@
+# Politica de Gestion y Validacion de Dependencias (Punto 3 de IaC.md)
+# Monitorea dependencias y proveedores externos para prevenir vulnerabilidades de Supply Chain
+
+version: 2
+updates:
+  # Escaneo continuo de proveedores y modulos Terraform/OpenTofu
+  - package-ecosystem: "terraform"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+
+  # Escaneo de GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"

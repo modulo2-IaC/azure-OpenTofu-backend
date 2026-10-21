@@ -24,6 +24,7 @@ provider "registry.opentofu.org/hashicorp/azurerm" {
     "zh:d38cd7d5f99398fb96672cb27943b96ea2b7008f26d379a69e1c6c2f25051869",
     "zh:d56f5a132181ab14e6be332996753cc11c0d3b1cfdd1a1b44ef484c67e38cc91",
     "zh:d8a1e7cf218f46e6d0bd878ff70f92db7e800a15f01e96189a24864d10cde33b",
+    "zh:f67cf6d14d859a1d2a1dc615941a1740a14cb3f4ee2a34da672ff6729d81fa80",
     "zh:f67cf6d14d859a1d2a1dc615941a1740a14cb3f4ee2a34da672ff6729d81fa81",
   ]
 }

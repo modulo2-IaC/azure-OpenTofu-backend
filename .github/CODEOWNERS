@@ -1,0 +1,5 @@
+# Politica de Gobernanza y Control de Versiones (Punto 2 de IaC.md)
+# Define que cualquier modificacion a la infraestructura OpenTofu / Azure
+# debe ser revisada y aprobada por los propietarios del repositorio.
+
+* @modulo2-IaC
