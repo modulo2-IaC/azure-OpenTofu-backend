@@ -8,8 +8,8 @@ project_name = "asistencia"
 environment  = "dev"
 location     = "swedencentral"
 
-# Standard_B2as_v2 = 2 vCPU / 2 GB RAM (disponible en Azure Free Trial)
-vm_size = "Standard_B2as_v2"
+# Standard_B2s_v2 = 2 vCPU / 4 GB RAM (disponible en Azure Free Trial)
+vm_size = "Standard_B2s_v2"
 
 # Credenciales de acceso SSH a la VM
 admin_username = "azureuser"

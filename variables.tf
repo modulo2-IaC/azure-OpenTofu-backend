@@ -17,9 +17,9 @@ variable "location" {
 }
 
 variable "vm_size" {
-  description = "Tamano de la maquina virtual. Standard_B2as_v2 (2 vCPU / 2 GB RAM) disponible sin restricciones para Azure Free Trial"
+  description = "Tamano de la maquina virtual. Standard_B2s_v2 (2 vCPU / 4 GB RAM) disponible con capacidad garantizada en Azure Free Trial"
   type        = string
-  default     = "Standard_B2as_v2"
+  default     = "Standard_B2s_v2"
 }
 
 variable "admin_username" {

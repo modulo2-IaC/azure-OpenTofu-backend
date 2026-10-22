@@ -21,8 +21,8 @@ resource "azurerm_monitor_action_group" "sre_alerts" {
   tags                = local.common_tags
 
   email_receiver {
-    name                    = "admin-email"
-    email_address           = "devops-admin@example.com"
+    name                    = "abel-email"
+    email_address           = "abel.lopez97001@gmail.com"
     use_common_alert_schema = true
   }
 }
