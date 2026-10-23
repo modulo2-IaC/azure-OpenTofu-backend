@@ -34,7 +34,7 @@ jobs:
       # HERRAMIENTA 3 (Punto 5 IaC.md): Analisis Estatico con TFLint
       # -----------------------------------------------------------------------
       - name: Setup TFLint
-        uses: terraform-linters/setup-tflint@v4
+        uses: terraform-linters/setup-tflint@v6
         with:
           tflint_version: latest
 
