@@ -58,7 +58,7 @@ jobs:
       # HERRAMIENTA 2 (Punto 3 IaC.md): Setup y Validacion de Dependencias
       # -----------------------------------------------------------------------
       - name: Setup OpenTofu
-        uses: opentofu/setup-opentofu@v1
+        uses: opentofu/setup-opentofu@v2
         with:
           tofu_version: 1.8.2
 
